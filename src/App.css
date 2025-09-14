@@ -3,6 +3,7 @@
 /* ［input type=”number”］の上下矢印を非表示 */
 .spin_erase::-webkit-inner-spin-button,
 .spin_erase::-webkit-outer-spin-button {
+appearance: none!important;
 -webkit-appearance: none!important;
 margin: 0!important;
 -moz-appearance:textfield!important;

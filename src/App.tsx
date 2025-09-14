@@ -1,4 +1,5 @@
-import { useState, FormEvent } from 'react';
+import { useState,useEffect } from 'react';
+import type { FormEvent } from 'react';
 import './App.css'
 
 interface Transaction {
@@ -17,10 +18,42 @@ function App() {
   const [date, setDate] = useState('');
   //収入か支出かを管理
   const [isExpense, setIsExpense] = useState(true);//デフォは支出
-  //合計金額の管理
-  const [totalBalance, setTotalBalance] = useState(0);
-  const [totalExpenses, setTotalExpenses] = useState(0);
-  const [totalIncome, setTotalIncome] = useState(0);
+  //年月を管理
+  const [selectedMonth, setSelectedMonth] = useState<string>('');
+
+  //初期表示時にローカルストレージのデータを読み込む
+  useEffect(() => {
+    const saved = localStorage.getItem("transactions");
+    if (saved) {
+      setTransactions(JSON.parse(saved));
+    }
+  }, []);
+
+  //年月のフィルタリング
+  const filteredTransactions = transactions.filter(tx => {
+    if (!selectedMonth) return true; // 未選択なら全部表示
+    const txDate = new Date(tx.date);
+    const txYearMonth = `${txDate.getFullYear()}-${String(txDate.getMonth() + 1).padStart(2, '0')}`;
+    return txYearMonth === selectedMonth;
+  });
+  //登録されているデータから年月リストを抽出
+  const uniqueMonths = Array.from(
+    new Set(
+      transactions.map(tx => {
+        const d = new Date(tx.date);
+        return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+      })
+    )
+  ).sort((a, b) => b.localeCompare(a)); // 新しい月が上にくるようにソート
+  // 合計を計算（フィルタ後）
+  const totalIncome = filteredTransactions
+    .filter(tx => !tx.isExpense)
+    .reduce((sum, tx) => sum + tx.amount, 0);
+  const totalExpenses = filteredTransactions
+    .filter(tx => tx.isExpense)
+    .reduce((sum, tx) => sum + Math.abs(tx.amount), 0);
+  const totalBalance = totalIncome - totalExpenses;
+
 
   //追加ボタンの挙動
   const handleAddTransaction = (e: FormEvent) => {
@@ -45,20 +78,13 @@ function App() {
 
     //既存のリストに新しい取引を追加
     setTransactions([...transactions, newTransaction]);
+    //ローカルストレージに保存※文字列しか持たせられない
+    localStorage.setItem("transactions", JSON.stringify([...transactions, newTransaction]));
 
     //フォームをリセット
     setCategory('');
     setAmount(0);
     setDate('');
-
-    //合計金額の更新
-    if(isExpense) {
-      setTotalExpenses(prev => prev +Math.abs(amount));
-      setTotalBalance(prev => prev +Math.abs(amount));
-    } else {
-      setTotalIncome(prev => prev +Math.abs(amount));
-      setTotalBalance(prev => prev +Math.abs(amount));
-    }
   };
 
   //カテゴリ
@@ -148,9 +174,31 @@ function App() {
         </button>
       </form>
 
+      <hr className='mt-4 mb-4' />
+
+      {/* 年月のフィルタリング */}
+      <div>
+        <label className="block mb-1 text-sm font-medium">表示期間</label>
+        <select
+          className="border p-2 w-full mb-4"
+          value={selectedMonth}
+          onChange={(e) => setSelectedMonth(e.target.value)}
+        >
+          <option value="">全ての期間</option>
+          {uniqueMonths.map(month => {
+            const [year, m] = month.split("-");
+            return (
+              <option key={month} value={month}>
+                {year}年{m}月
+              </option>
+            );
+          })}
+        </select>
+      </div>
+
       {/* リスト */}
       <ul className="space-y-2">
-        {transactions.map((transaction, index) => (
+        {filteredTransactions.map((transaction, index) => (
           <li
             key={index} // リストのアイテムには一意のキーが必要
             className={`border p-2 rounded-lg flex justify-between items-center ${
