@@ -1,13 +1,9 @@
 import { useState,useEffect } from 'react';
 import type { FormEvent } from 'react';
 import './App.css'
-
-interface Transaction {
-  category: string;
-  amount: number;
-  date: string;
-  isExpense: boolean;//出費かどうか
-}
+import type { Transaction } from "./types";
+import { TransactionList } from "./TransactionList";
+import { TransactionForm } from "./TransactionForm";
 
 function App() {
   //家計簿の取引を管理
@@ -87,14 +83,6 @@ function App() {
     setDate('');
   };
 
-  //カテゴリ
-  const getEmojiForCategory = (cat: string) => {
-    if (cat.includes('食費')) return '🍔';
-    if (cat.includes('交通費')) return '🚃';
-    if (cat.includes('給料')) return '💰';
-    return '📝'; // その他
-  };
-
 
 
   return (
@@ -116,63 +104,17 @@ function App() {
       </div>
 
       {/* 入力フォーム */}
-      <form onSubmit={handleAddTransaction} className="mb-4 space-y-2">
-        <select
-          className="border p-2 w-full rounded-md"
-          value={category}
-          onChange={(e) => setCategory(e.target.value)}
-        >
-          <option value="" disabled>カテゴリを選択</option>
-          <option value="食費">食費</option>
-          <option value="交通費">交通費</option>
-          <option value="給料">給料</option>
-          <option value="その他">その他</option>
-        </select>
-
-
-          <input
-            type="number"
-            placeholder="金額"
-            className="border p-2 w-full rounded-md spin_erase"
-            value={amount === 0 ? '' : amount}
-            onChange={(e) => setAmount(Number(e.target.value))}
-          />
-          {/* 収入/支出のラジオボタン */}
-          <div className="flex items-center space-x-2">
-            <input
-              type="radio"
-              id="expense"
-              name="type"
-              checked={isExpense}
-              onChange={() => setIsExpense(true)}
-              className="form-radio text-red-500 h-4 w-4"
-            />
-            <label htmlFor="expense" className="text-sm font-medium text-gray-700">支出</label>
-            <input
-              type="radio"
-              id="income"
-              name="type"
-              checked={!isExpense}
-              onChange={() => setIsExpense(false)}
-              className="form-radio text-green-500 h-4 w-4"
-            />
-            <label htmlFor="income" className="text-sm font-medium text-gray-700">収入</label>
-          </div>
-
-
-        <input
-          type="date"
-          className="border p-2 w-full"
-          value={date}
-          onChange={(e) => setDate(e.target.value)}
-        />
-        <button
-          type="submit"
-          className="bg-blue-500 text-white px-4 py-2 rounded w-full"
-        >
-          追加
-        </button>
-      </form>
+      <TransactionForm
+        category={category}
+        setCategory={setCategory}
+        amount={amount}
+        setAmount={setAmount}
+        date={date}
+        setDate={setDate}
+        isExpense={isExpense}
+        setIsExpense={setIsExpense}
+        onAddTransaction={handleAddTransaction}
+      />
 
       <hr className='mt-4 mb-4' />
 
@@ -197,29 +139,7 @@ function App() {
       </div>
 
       {/* リスト */}
-      <ul className="space-y-2">
-        {filteredTransactions.map((transaction, index) => (
-          <li
-            key={index} // リストのアイテムには一意のキーが必要
-            className={`border p-2 rounded-lg flex justify-between items-center ${
-              transaction.isExpense ? 'border-red-400' : 'border-green-400'
-            }`}
-          >
-            <div>
-              <span>{transaction.date}</span>
-              ：
-              <span className="mr-2">{getEmojiForCategory(transaction.category)}</span>
-              <span className="font-semibold">{transaction.category}</span>
-              ：
-              <span className={`font-bold ${
-                transaction.isExpense ? 'text-red-600' : 'text-green-600'
-              }`}>
-                {transaction.amount}円
-              </span>
-            </div>
-          </li>
-        ))}
-      </ul>
+      <TransactionList transactions={filteredTransactions} />
     </div>
   );
 }
