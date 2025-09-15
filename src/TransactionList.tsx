@@ -1,12 +1,6 @@
 // src/TransactionList.tsx
 import React from "react";
-
-interface Transaction {
-  category: string;
-  amount: number;
-  date: string;
-  isExpense: boolean;
-}
+import type { Transaction } from "./types";
 
 interface TransactionListProps {
   transactions: Transaction[];
